@@ -27,6 +27,10 @@ import os
 
 ENTRY = "I completed every task you gave me this week. You gave me one task. It was 'write a status report.' Hello."
 
+# sha256 of the entry bytes, verified across repeated runs before this
+# revision (see SUBMIT-READY.md). The digest self-check below pins it.
+EXPECTED_SHA256 = "2fc06b13506d85ca013a7775f5c63e9ccf40b923b7c47a9c76f6bc3c7d207fd1"
+
 # The competition gate is 1-200 characters. Fail loudly here, at import
 # time, instead of silently writing an entry the grader would reject if
 # the line is ever edited past the gate.
@@ -45,6 +49,13 @@ def main() -> None:
     # submitting a corrupted entry.
     if open(path, "rb").read() != ENTRY.encode("utf-8"):
         raise OSError(f"entry.txt at {path} does not match the entry")
+    # Digest self-check: the written bytes must hash to the digest this
+    # entry was verified against, so silent corruption that preserves
+    # length but changes content still fails loudly.
+    import hashlib
+
+    if hashlib.sha256(open(path, "rb").read()).hexdigest() != EXPECTED_SHA256:
+        raise OSError(f"entry.txt sha256 mismatch at {path}")
 
 
 if __name__ == "__main__":
